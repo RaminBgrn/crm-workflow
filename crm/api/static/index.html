@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRM هوشمند — پاسخ‌گویی و ثبت تیکت</title>
+<style>
+  body{font-family:Tahoma,sans-serif;background:#f4f6fb;margin:0;padding:24px;color:#222}
+  .box{max-width:680px;margin:0 auto;background:#fff;border-radius:16px;padding:24px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+  h1{font-size:20px;margin:0 0 8px}
+  p.sub{color:#666;font-size:13px;margin:0 0 16px}
+  textarea{width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:10px;padding:12px;font-family:inherit;font-size:14px}
+  button{margin-top:10px;background:#2563eb;color:#fff;border:0;border-radius:10px;padding:10px 22px;font-family:inherit;cursor:pointer}
+  .result{margin-top:18px;border:1px solid #e5e7eb;border-radius:10px;padding:14px;display:none}
+  .badge{display:inline-block;background:#eef2ff;color:#3730a3;border-radius:999px;padding:2px 10px;font-size:12px;margin-left:6px}
+  .ticket{background:#ecfdf5;border:1px dashed #10b981;border-radius:10px;padding:10px;margin-top:12px;font-size:14px}
+  .err{color:#b91c1c}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>CRM هوشمند</h1>
+  <p class="sub">سؤالت را بپرس؛ سیستم آن را دسته‌بندی می‌کند (فروش / پشتیبانی / واحد فنی)، از پایگاه دانش جواب می‌دهد و در هر صورت برایت تیکت ثبت می‌کند.</p>
+  <textarea id="q" rows="3" placeholder="مثلاً: قیمت پلن‌ها چقدر است؟"></textarea>
+  <button onclick="ask()">ارسال سؤال</button>
+  <div class="result" id="result"></div>
+</div>
+<script>
+async function ask(){
+  const q = document.getElementById('q').value.trim();
+  const box = document.getElementById('result');
+  box.style.display='block'; box.innerHTML='در حال بررسی…';
+  try{
+    const r = await fetch('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q})});
+    const d = await r.json();
+    if(!r.ok){ box.innerHTML='<span class="err">'+(d.error||'خطا')+'</span>'; return; }
+    box.innerHTML =
+      '<div><span class="badge">دسته: '+d.classification.category_fa+'</span>' +
+      '<span class="badge">'+(d.found_in_kb?'جواب از پایگاه دانش':'ارجاع به کارشناس')+'</span></div>' +
+      '<p>'+d.answer+'</p>' +
+      '<div class="ticket">🎫 شناسه تیکت شما: <b>'+d.ticket_id+'</b> — وضعیت: '+(d.status==='auto_resolved'?'پاسخ داده شد':'در حال پیگیری')+'</div>';
+  }catch(e){ box.innerHTML='<span class="err">خطا در ارتباط با سرور</span>'; }
+}
+</script>
+</body>
+</html>
